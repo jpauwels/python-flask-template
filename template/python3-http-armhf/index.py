@@ -25,21 +25,18 @@ def format_status_code(res):
     
     return 200
 
-def format_body(res, content_type):
-    if content_type == 'application/octet-stream':
-        return res['body']
-
+def format_body(res):
     if 'body' not in res:
         return ""
-    elif type(res['body']) == dict:
-        return jsonify(res['body'])
+    elif isinstance(res['body'], (bytes, str)):
+        return res['body']
     else:
-        return str(res['body'])
+        return jsonify(res['body'])
 
 def format_headers(res):
     if 'headers' not in res:
         return []
-    elif type(res['headers']) == dict:
+    elif isinstance(res['headers'], dict):
         headers = []
         for key in res['headers'].keys():
             header_tuple = (key, res['headers'][key])
@@ -48,20 +45,12 @@ def format_headers(res):
     
     return res['headers']
 
-def get_content_type(res):
-    content_type = ""
-    if 'headers' in res:
-        content_type = res['headers'].get('Content-type', '')
-    return content_type
-
 def format_response(res):
     if res == None:
         return ('', 200)
 
     statusCode = format_status_code(res)
-    content_type = get_content_type(res)
-    body = format_body(res, content_type)
-
+    body = format_body(res)
     headers = format_headers(res)
 
     return (body, statusCode, headers)
@@ -71,7 +60,6 @@ def format_response(res):
 def call_handler(path):
     event = Event()
     context = Context()
-
     response_data = handler.handle(event, context)
     
     res = format_response(response_data)

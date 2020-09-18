@@ -3,6 +3,7 @@
 
 from flask import Flask, request
 from function import handler
+from waitress import serve
 
 app = Flask(__name__)
 
@@ -21,8 +22,17 @@ def fix_transfer_encoding():
 @app.route("/", defaults={"path": ""}, methods=["POST", "GET"])
 @app.route("/<path:path>", methods=["POST", "GET"])
 def main_route(path):
-    ret = handler.handle(request.get_data())
+    if request.is_json():
+        ret = request.get_json()
+    else:
+        if (not request.content_type
+        or request.content_type.startswith('text/')
+        or request.content_type == 'application/x-www-form-urlencoded'):
+            as_text = True
+        else:
+            as_text = False
+        ret = handler.handle(request.get_data(as_text=as_text))
     return ret
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    serve(app, host='0.0.0.0', port=5000)
